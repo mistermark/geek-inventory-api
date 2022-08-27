@@ -1,8 +1,15 @@
+import { AuthenticationError } from 'apollo-server';
 import { Type, CollectionItem } from '../db/db.js';
 
-const _createCollectionItem = (parent, args, context, info) => {
+const throwAuthError = (reject) => {
+  throw new AuthenticationError("Not logged in!");
+  if(reject) reject();
+}
+
+const _createCollectionItem = (parent, { data }, { auth }) => {
   return new Promise((resolve, reject) => {
-    CollectionItem.create(args.data, (err, newItem) => {
+    if(!auth.isAuthenticated) throwAuthError(reject);
+    CollectionItem.create(data, (err, newItem) => {
       if (err) reject(err);
       else resolve({
         code: 200,
@@ -13,8 +20,9 @@ const _createCollectionItem = (parent, args, context, info) => {
   })
 }
 
-const _updateCollectionItem = (parent, args, context, info) => {
+const _updateCollectionItem = (parent, args, {auth}, info) => {
   return new Promise((resolve, reject) => {
+    if(!auth.isAuthenticated) throwAuthError(reject);
     CollectionItem.findByIdAndUpdate(args.data._id, args.data, (err, updatedItem) => {
       if (err) reject(err);
       else resolve({
@@ -28,24 +36,27 @@ const _updateCollectionItem = (parent, args, context, info) => {
 
 export const resolvers = {
   Query: {
-    types: () => {
+    types: (parent, args, {auth}) => {
       return new Promise((resolve, reject) => {
+        if(!auth.isAuthenticated) throwAuthError(reject);
         Type.find((err, types) => {
           if(err) reject(err)
           else resolve(types);
         })
       })
     },
-    item: (parent, args) => {
+    item: (parent, args, {auth}) => {
       return new Promise((resolve, reject) => {
+        if(!auth.isAuthenticated) throwAuthError(reject);
         CollectionItem.findById(args.id, (err, item) => {
           if (err) reject(err)
           else resolve(item);
         })
       })
     },
-    collectionItems: () => {
+    collectionItems: (parent, args, {auth}) => {
       return new Promise((resolve, reject) => {
+        if(!auth.isAuthenticated) throwAuthError(reject);
         CollectionItem.find((err, collectionItems) => {
           const returnVal = collectionItems.map((item) => {
               return {
@@ -58,9 +69,10 @@ export const resolvers = {
         })
       })
     },
-    collectionItemsByType: (parent, args, context, info) => {
+    collectionItemsByType: (parent, args, {auth}, info) => {
       const { type } = args;
       return new Promise((resolve, reject) => {
+        if(!auth.isAuthenticated) throwAuthError(reject);
         CollectionItem.find((type ? {type} : {}), (err, collectionItems) => {
           const returnVal = collectionItems.map((item) => {
               return {
@@ -79,8 +91,9 @@ export const resolvers = {
     createCollectionItemVideoGame: _createCollectionItem,
     updateCollectionItemLego: _updateCollectionItem,
     updateCollectionItemVideoGame: _updateCollectionItem,
-    deleteCollectionItem: (parent, args, context, info) => {
+    deleteCollectionItem: (parent, args, {auth}, info) => {
       return new Promise((resolve, reject) => {
+        if(!auth.isAuthenticated) throwAuthError(reject);
         CollectionItem.findByIdAndDelete(args.id, (err) => {
           if(err) reject(err)
           else resolve({
