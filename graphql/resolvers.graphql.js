@@ -2,8 +2,8 @@ import { AuthenticationError } from 'apollo-server';
 import { Type, CollectionItem } from '../db/db.js';
 
 const throwAuthError = (reject) => {
-  throw new AuthenticationError("Not logged in!");
   if(reject) reject();
+  throw new AuthenticationError("Not logged in!");
 }
 
 const _createCollectionItem = (parent, { data }, { auth }) => {
