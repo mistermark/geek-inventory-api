@@ -2,10 +2,11 @@ import { gql } from 'apollo-server';
 
 export const Queries = gql`
   type Query {
-    types: [Type]
-    item(id: String!): CollectionItemType
-    collectionItems: [CollectionItemType]
-    collectionItemsByType(type: String!): [CollectionItemType]
+    types(username: String!): [Type]
+    getInventory(username: String!): [Item]
+    item(id: String!): Item
+    collectionItems: [Item]
+    itemsByType(type: String!, username: String): [Item]
   }
 `;
 

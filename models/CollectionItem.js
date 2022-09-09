@@ -4,7 +4,7 @@ import { PriceSchema, RefUrlSchema } from './SharedSchema.js';
 
 const Schema = mongoose.Schema;
 
-const CollectionItemSchema = new Schema({
+const ItemSchema = new Schema({
   type: String,
   name: String,
   state: {
@@ -22,4 +22,4 @@ const CollectionItemSchema = new Schema({
   }
 });
 
-export default CollectionItemSchema;
+export default ItemSchema;

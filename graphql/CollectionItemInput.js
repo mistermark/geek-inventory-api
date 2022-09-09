@@ -1,4 +1,9 @@
 const CollectionItemLegoInput = `
+  type mutateGeneralResponse {
+    code: Int
+    message: String
+    data: CollectionItemLegoType
+  }
   type mutateCollectionItemLegoResponse {
     code: Int
     message: String

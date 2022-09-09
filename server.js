@@ -5,7 +5,7 @@ import { Queries } from './graphql/Queries.js';
 import { Mutations } from './graphql/Mutations.js';
 import { Type } from './graphql/Types.js';
 import {
-  CollectionItemType,
+  Item,
   CollectionItemLegoType,
   CollectionItemVideoGameType,
 } from './graphql/CollectionItemType.js';
@@ -25,7 +25,7 @@ const server = new ApolloServer({
     Queries,
     Mutations,
     Type,
-    CollectionItemType,
+    Item,
     CollectionItemLegoType,
     CollectionItemVideoGameType,
     CollectionItemLegoInput,

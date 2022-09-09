@@ -1,5 +1,5 @@
 import { AuthenticationError } from 'apollo-server';
-import { Type, CollectionItem } from '../db/db.js';
+import { Type, Item, User } from '../db/db.js';
 
 const throwAuthError = (reject) => {
   if(reject) reject();
@@ -9,7 +9,7 @@ const throwAuthError = (reject) => {
 const _createCollectionItem = (parent, { data }, { auth }) => {
   return new Promise((resolve, reject) => {
     if(!auth.isAuthenticated) throwAuthError(reject);
-    CollectionItem.create(data, (err, newItem) => {
+    Item.create(data, (err, newItem) => {
       if (err) reject(err);
       else resolve({
         code: 200,
@@ -23,7 +23,7 @@ const _createCollectionItem = (parent, { data }, { auth }) => {
 const _updateCollectionItem = (parent, args, {auth}, info) => {
   return new Promise((resolve, reject) => {
     if(!auth.isAuthenticated) throwAuthError(reject);
-    CollectionItem.findByIdAndUpdate(args.data._id, args.data, (err, updatedItem) => {
+    Item.findByIdAndUpdate(args.data._id, args.data, (err, updatedItem) => {
       if (err) reject(err);
       else resolve({
         code: 200,
@@ -39,16 +39,26 @@ export const resolvers = {
     types: (parent, args, {auth}) => {
       return new Promise((resolve, reject) => {
         if(!auth.isAuthenticated) throwAuthError(reject);
-        Type.find((err, types) => {
-          if(err) reject(err)
-          else resolve(types);
-        })
+        const { username } = args;
+        User.findOne({username})
+          .populate('items')
+          .exec((err, user) => {
+            try {
+              const uniqTypes = [...new Set(user.items.map(item => item.type))];
+              Type.find({type: uniqTypes}, (err, types) => {
+                if(err) reject(err)
+                else resolve(types.sort((a, b) => (a.name > b.name ? 1 : -1)));
+              })
+            } catch(e) {
+              reject(e);
+            }
+          });
       })
     },
     item: (parent, args, {auth}) => {
       return new Promise((resolve, reject) => {
         if(!auth.isAuthenticated) throwAuthError(reject);
-        CollectionItem.findById(args.id, (err, item) => {
+        Item.findById(args.id, (err, item) => {
           if (err) reject(err)
           else resolve(item);
         })
@@ -57,7 +67,7 @@ export const resolvers = {
     collectionItems: (parent, args, {auth}) => {
       return new Promise((resolve, reject) => {
         if(!auth.isAuthenticated) throwAuthError(reject);
-        CollectionItem.find((err, collectionItems) => {
+        Item.find((err, collectionItems) => {
           const returnVal = collectionItems.map((item) => {
               return {
                 ...item._doc,
@@ -69,20 +79,38 @@ export const resolvers = {
         })
       })
     },
-    collectionItemsByType: (parent, args, {auth}, info) => {
-      const { type } = args;
+    getInventory: (parent, args, {auth}) => {
       return new Promise((resolve, reject) => {
-        if(!auth.isAuthenticated) throwAuthError(reject);
-        CollectionItem.find((type ? {type} : {}), (err, collectionItems) => {
-          const returnVal = collectionItems.map((item) => {
-              return {
-                ...item._doc,
-                _id: item.id,
-              };
+        try {
+          if(!auth.isAuthenticated) throwAuthError(reject);
+          const { username } = args;
+          User.findOne({username}).populate('items').exec((err, user) => {
+            if (err) reject(err);
+            else resolve(user.items);
+          });
+        } catch(e) {
+          reject(e);
+        }
+      });
+    },
+    itemsByType: (parent, args, {auth}) => {
+      return new Promise((resolve, reject) => {
+        try {
+          if(!auth.isAuthenticated) throwAuthError(reject);
+          const { type, username } = args;
+          if(username) {
+            User.findOne({username}).populate('items').exec((err, user) => {
+              resolve(user.items.filter(item => item.type === type));
+            });
+          } else {
+            Item.find({type}, (err, collectionItems) => {
+              if (err) reject(err)
+              else resolve(collectionItems);
             })
-          if (err) reject(err)
-          else resolve(returnVal);
-        })
+          }
+        } catch(e) {
+          reject(e);
+        }
       })
     },
   },
@@ -91,16 +119,65 @@ export const resolvers = {
     createCollectionItemVideoGame: _createCollectionItem,
     updateCollectionItemLego: _updateCollectionItem,
     updateCollectionItemVideoGame: _updateCollectionItem,
-    deleteCollectionItem: (parent, args, {auth}, info) => {
+    deleteItem: (parent, args, {auth}, info) => {
       return new Promise((resolve, reject) => {
         if(!auth.isAuthenticated) throwAuthError(reject);
-        CollectionItem.findByIdAndDelete(args.id, (err) => {
+        Item.findByIdAndDelete(args.id, (err) => {
           if(err) reject(err)
           else resolve({
-              code: 200,
+              code: 204,
               message: "success"
             })
         })
+      })
+    },
+    removeFromInventory: (parent, args, {auth}) => {
+      return new Promise((resolve, reject) => {
+        try {
+          if(!auth.isAuthenticated) throwAuthError(reject);
+          const {id, username} = args;
+          User.updateOne({username}, { $pull: {items: id}}, (err, result) => {
+            if(err) reject(err);
+            if(result && result.modifiedCount === 0) {
+              resolve({
+                code: 204,
+                message: "notfound",
+              })
+            } else {
+              resolve({
+                code: 204,
+                message: "success",
+              })
+            }
+          })
+        } catch(e) {
+          reject(e)
+        }
+      });
+    },
+    addToInventory: (parent, args, {auth}) => {
+      return new Promise((resolve, reject) => {
+        try {
+          if(!auth.isAuthenticated) throwAuthError(reject);
+          const { id, username } = args;
+          User.updateOne({username}, { $addToSet: { items: [id]} }, (err, result) => {
+            if(err) reject(err);
+            if(result && result.modifiedCount === 0) {
+              resolve({
+                code: 204,
+                message: "duplicate",
+              })
+            } else {
+              resolve({
+                code: 204,
+                message: "success",
+              })
+            }
+          })
+
+        } catch(e) {
+          reject(e);
+        }
       })
     }
   }

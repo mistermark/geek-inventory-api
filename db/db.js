@@ -3,7 +3,8 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 import TypeSchema from '../models/CollectionType.js';
-import CollectionItemSchema from '../models/CollectionItem.js';
+import ItemSchema from '../models/CollectionItem.js';
+import UserSchema from '../models/User.js';
 
 mongoose.connect(process.env.MONGODB_URI, {
   useNewUrlParser: true,
@@ -16,9 +17,11 @@ db.on('error', () => {
 });
 
 const Type = mongoose.model('Type', TypeSchema, 'types');
-const CollectionItem = mongoose.model('CollectionItem', CollectionItemSchema, 'items');
+const Item = mongoose.model('Item', ItemSchema, 'items');
+const User = mongoose.model('User', UserSchema, 'users');
 
 export {
   Type,
-  CollectionItem
+  Item,
+  User
 }

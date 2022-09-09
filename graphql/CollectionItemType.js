@@ -44,7 +44,7 @@ const CollectionItemVideoGameType = `
   }
 `
 
-const CollectionItemType = `
+const Item = `
   type CollectionItemMetaData {
     # VideoGame
     platform: String
@@ -64,7 +64,7 @@ const CollectionItemType = `
     pieces: Int
   }
 
-  type CollectionItemType {
+  type Item {
     _id: ID
     type: String
     name: String
@@ -79,7 +79,7 @@ const CollectionItemType = `
   `
 
   export {
-    CollectionItemType,
+    Item,
     CollectionItemLegoType,
     CollectionItemVideoGameType
   }

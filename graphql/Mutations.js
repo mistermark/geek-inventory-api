@@ -4,6 +4,8 @@ export const Mutations = `
     createCollectionItemVideoGame(data: CollectionItemVideoGameInput): mutateCollectionItemVideoGameResponse
     updateCollectionItemLego(data: CollectionItemLegoInput!): mutateCollectionItemLegoResponse
     updateCollectionItemVideoGame(data: CollectionItemVideoGameInput!): mutateCollectionItemVideoGameResponse
-    deleteCollectionItem(id: String!): deleteItemResponse
+    deleteItem(id: String!): deleteItemResponse
+    addToInventory(id: String!, username: String!): mutateGeneralResponse
+    removeFromInventory(id: String!, username: String!): mutateGeneralResponse
   }
 `;
